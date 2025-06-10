@@ -27,7 +27,7 @@ const NavBar = () => {
   return (
     <nav className="navbar is-dark has-shadow is-spaced" role="navigation" aria-label="main navigation">
       <div className="navbar-brand">
-        <span className="navbar-item has-text-weight-bold has-text-warning mr-5">MyDATA</span>
+        <span className="navbar-item has-text-weight-bold has-text-warning mr-5">LOGICORE</span>
       </div>
 
       <div className="navbar-menu is-active">

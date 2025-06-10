@@ -47,8 +47,9 @@ export default function DailyReportList() {
       .select(
         `
         id, report_date, task_description, work_hours, overtime_hours, manpower, project_id, user_id,
-        profiles(name)
-      `
+        profiles(name),
+        projects(id, project_no)
+        `
       )
       .order("report_date", { ascending: false });
 
@@ -120,7 +121,7 @@ export default function DailyReportList() {
               <tr key={r.id}>
                 <td>{r.report_date ? new Date(r.report_date).toLocaleDateString() : "-"}</td>
                 <td>{r.profiles?.name || "-"}</td>
-                <td>{r.project_id ?? "-"}</td>
+                <td>{r.projects?.project_no ?? "-"}</td>
                 <td>{r.task_description ?? "-"}</td>
                 <td>{r.work_hours ?? 0}h</td>
                 <td>{r.overtime_hours ?? 0}h</td>

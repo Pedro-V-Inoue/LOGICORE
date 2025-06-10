@@ -70,7 +70,7 @@ const Login = () => {
     <div className="has-background-dark" style={{ minHeight: '100vh', width: '100%' }}>
       <div className="is-flex is-justify-content-center is-align-items-center" style={{ minHeight: '100vh', width: '100%', maxWidth: '600px', margin: '0 auto' }}>
         <form onSubmit={handleLogin} className="box" style={{ width: '100%', maxWidth: '1920px' }}>
-          <h1 className="title has-text-centered has-text-primary mb-5" style={{ fontSize: '4rem' }}>MyDATA</h1>
+          <h1 className="title has-text-centered has-text-primary mb-5" style={{ fontSize: '4rem' }}>LOGICORE</h1>
           <p className="subtitle has-text-centered has-text-grey">アカウントにログインしてください</p>
 
           <div className="field is-horizontal">

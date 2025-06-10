@@ -1,4 +1,5 @@
 export type Report = {
+  projects: { project_no: number };
   id: number;
   report_date: string;
   task_description: string;

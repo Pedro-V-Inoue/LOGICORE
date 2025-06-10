@@ -12,19 +12,19 @@ export default function ReportModal({
   userId: string | null;
 }) {
   const [reportDate, setReportDate] = useState(report?.report_date || "");
-  const [projectId, setProjectId] = useState(report?.project_id || 1);
+  const [projectId, setProjectId] = useState(report?.project_id || 23);
   const [task, setTask] = useState(report?.task_description || "");
   const [workHours, setWorkHours] = useState(report?.work_hours || 0);
   const [overtime, setOvertime] = useState(report?.overtime_hours || 0);
-  const [projects, setProjects] = useState<{ id: number; name: string }[]>([]);
+  const [projects, setProjects] = useState<{ id: number; no: number; name: string }[]>([]);
 
   useEffect(() => {
     const fetchProjects = async () => {
-      const { data, error } = await supabase.from("projects").select("project_no, project_name");
+      const { data, error } = await supabase.from("projects").select("id, project_no, project_name");
       if (error) {
         console.error("プロジェクト取得エラー:", error.message);
       } else {
-        setProjects((data || []).map((p: any) => ({ id: p.project_no, name: p.project_name })));
+        setProjects((data || []).map((p: any) => ({ id: p.id, no: p.project_no, name: p.project_name })));
       }
     };
 
@@ -97,7 +97,7 @@ export default function ReportModal({
                 >
                   {projects.map((p) => (
                     <option key={p.id} value={p.id}>
-                      （工事No: {p.id}）{p.name}
+                      （工事No: {p.no}）{p.name}
                     </option>
                   ))}
                 </select>
