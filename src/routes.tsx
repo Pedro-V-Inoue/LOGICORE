@@ -7,6 +7,7 @@ import ProjectEntry from "./pages/ProjectEntry";
 import OrderEntry from "./pages/OrderEntry";
 import CostSummary from "./pages/CostSummary";
 import WageManager from "./pages/WageManager";
+import Dashboard from "./pages/Dashboard";
 
 
 const routes = [
@@ -17,6 +18,14 @@ const routes = [
     element: (
       <ProtectedRoute>
         <DailyReport />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/dashboard",
+    element: (
+      <ProtectedRoute>
+        <Dashboard />
       </ProtectedRoute>
     ),
   },
@@ -40,7 +49,7 @@ const routes = [
     path: "/cost-summary",
     element: (
       <ProtectedRoute>
-        <CostSummary projectId={1} />
+        <CostSummary />
       </ProtectedRoute>
     ),
   },

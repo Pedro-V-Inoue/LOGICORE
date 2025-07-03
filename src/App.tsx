@@ -18,7 +18,10 @@ function AppWrapper() {
   return (
     <div className="has-background-dark" style={{ minHeight: '100vh', width: '100vw', display: 'flex', flexDirection: 'column' }}>
       {!shouldHideNav && <NavBar />}
-      <main className="section is-flex-grow-1 px-4 py-5">
+      <main 
+        className="is-flex-grow-1 px-4 py-5"
+        style={{ marginTop: "85px" }}
+      >
         <Routes>
           <Route path="/" element={<Navigate to="/login" replace />} />
           {routes.map((route, index) => (

@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { MdLogout, MdAutoStories } from "react-icons/md";
+import { MdLogout, MdAutoStories, MdInsertChart } from "react-icons/md";
 import { useEffect, useState } from "react";
 import { supabase } from "./lib/supabaseClient";
 
@@ -25,7 +25,17 @@ const NavBar = () => {
   }, []);
 
   return (
-    <nav className="navbar is-dark has-shadow is-spaced" role="navigation" aria-label="main navigation">
+    <nav 
+      className="navbar is-dark has-shadow is-spaced" 
+      role="navigation" 
+      aria-label="main navigation"
+      style={{
+        position: "fixed",
+        top: 0,
+        width: "100%",
+        zIndex: 1000, // 上に重ねるための優先度
+      }}
+    >
       <div className="navbar-brand">
         <span className="navbar-item has-text-weight-bold has-text-warning mr-5">LOGICORE</span>
       </div>
@@ -33,20 +43,31 @@ const NavBar = () => {
       <div className="navbar-menu is-active">
         <div className="navbar-start">
           {role === "worker" && (
-            <Link 
-              to="/daily-report" 
-              className="navbar-item has-text-white has-text-weight-semibold"
-              style={{ display: 'flex', alignItems: 'center' }}
-            >
-              <span className="icon mr-2" style={{ fontSize: '1.5rem' }}>
-                <MdAutoStories size={24} />
-              </span>
-            </Link>
+            <>
+              <Link 
+                to="/daily-report" 
+                className="navbar-item has-text-white has-text-weight-semibold"
+                style={{ display: 'flex', alignItems: 'center' }}
+              >
+                <span className="icon mx-2" style={{ fontSize: '1.5rem' }}>
+                  <MdAutoStories size={24} />
+                </span>
+              </Link>
+              <Link 
+                to="/dashboard" 
+                className="navbar-item has-text-white has-text-weight-semibold"
+                style={{ display: 'flex', alignItems: 'center' }}
+              >
+                <span className="icon mx-2" style={{ fontSize: '1.5rem' }}>
+                  <MdInsertChart size={24} />
+                </span>
+              </Link>
+            </>
           )}
 
           {role === "staff" && (
             <>
-              <Link to="/order-entry" className="navbar-item has-text-white has-text-weight-semibold">
+              <Link to="/orders" className="navbar-item has-text-white has-text-weight-semibold">
                 発注入力
               </Link>
               <Link to="/cost-summary" className="navbar-item has-text-white has-text-weight-semibold">

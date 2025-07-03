@@ -27,57 +27,56 @@ type DailyReport = {
   user_name: string; // 追加: 作業者名（profilesテーブル等から取得）
 };
 
-// propsなどでprojectIdを受け取る想定
-export default function CostSheet({ projectId }: { projectId: number }) {
+export default function CostSheet() {
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [selectedProjectId, setSelectedProjectId] = useState<number | null>(null);
   const [project, setProject] = useState<Project | null>(null);
   const [purchaseOrders, setPurchaseOrders] = useState<PurchaseOrder[]>([]);
-  const [dailyReports, setDailyReports] = useState<Record<
-    number, // purchase_order_id
-    DailyReport[]
-  >>({});
+  const [dailyReports, setDailyReports] = useState<Record<number, DailyReport[]>>({});
   const [loading, setLoading] = useState(false);
 
+  // 初期：プロジェクト一覧を取得
   useEffect(() => {
-    if (!projectId) return;
-    fetchData();
-  }, [projectId]);
+    fetchProjects();
+  }, []);
 
-  async function fetchData() {
-    setLoading(true);
+  // プロジェクト選択時にデータ取得
+  useEffect(() => {
+    if (selectedProjectId){
+      fetchData(selectedProjectId);
+    }
+  }, [selectedProjectId]);
 
-    // 1. 工事情報取得
-    const { data: projectData, error: projectErr } = await supabase
+  async function fetchProjects() {
+    const { data, error } = await supabase
       .from("projects")
       .select("id, project_no, project_name, product_name")
+      .order("project_no");
+
+    if (error) {
+      alert("プロジェクト取得エラー: " + error.message);
+    } else {
+      setProjects(data || []);
+    }
+  }
+
+  async function fetchData(projectId: number) {
+    setLoading(true);
+
+    const { data: projectData } = await supabase
+      .from("projects")
+      .select("*")
       .eq("id", projectId)
       .single();
-
-    if (projectErr) {
-      alert("工事情報取得エラー: " + projectErr.message);
-      setLoading(false);
-      return;
-    }
     setProject(projectData);
 
-    // 2. 発注品取得
-    const { data: poData, error: poErr } = await supabase
+    const { data: poData } = await supabase
       .from("purchase_orders")
-      .select("id, item_name, quantity, unit, unit_price, total_price")
-      .eq("project_id", projectId)
-      .order("id");
-
-    if (poErr) {
-      alert("発注品取得エラー: " + poErr.message);
-      setLoading(false);
-      return;
-    }
+      .select("*")
+      .eq("project_id", projectId);
     setPurchaseOrders(poData || []);
 
-    // 3. 作業者の日報取得（作業者名と結合）
-    // 作業者名は profiles テーブルと join (user_id -> id)
-    // また、発注品に紐づく日報を想定（project_idで絞り込み）
-
-    const { data: drData, error: drErr } = await supabase
+    const { data: drData } = await supabase
       .from("daily_reports")
       .select(`
         id,
@@ -91,36 +90,17 @@ export default function CostSheet({ projectId }: { projectId: number }) {
           name
         )
       `)
-      .eq("project_id", projectId)
-      .order("id");
+      .eq("project_id", projectId);
 
-    if (drErr) {
-      alert("日報取得エラー: " + drErr.message);
-      setLoading(false);
-      return;
-    }
-
-    // 日報を発注品に紐づけるロジック
-    // ※ purchase_ordersに直接日報が紐づかない場合はproject単位のみ表示対応に。
-    // 日報が発注品IDを持っているならproject_idではなくpurchase_order_idを基準にできるが、現状スキーマにない。
-
-    // 今回は日報を全体で取得し、日報のtask_descriptionを発注品のitem_nameと紐づける（簡易マッチング）例示
-
+    // 日報をアイテムにマッピング
     const dailyMap: Record<number, DailyReport[]> = {};
-    (poData || []).forEach((po) => {
-      dailyMap[po.id] = [];
-    });
+    (poData || []).forEach((po) => (dailyMap[po.id] = []));
 
-    (drData || []).forEach((dr) => {
-      // task_descriptionに発注品名が含まれる場合、紐づける想定（例）
-      if (!dr.task_description) return;
-
+    (drData || []).forEach((dr: any) => {
       const targetPo = (poData || []).find((po) =>
         dr.task_description?.includes(po.item_name)
       );
-
       if (targetPo) {
-        dailyMap[targetPo.id] = dailyMap[targetPo.id] || [];
         dailyMap[targetPo.id].push({
           id: dr.id,
           user_id: dr.user_id,
@@ -128,7 +108,7 @@ export default function CostSheet({ projectId }: { projectId: number }) {
           work_hours: dr.work_hours,
           overtime_hours: dr.overtime_hours,
           note: dr.note,
-          user_name: dr.profiles?.[0]?.name ?? "不明",
+          user_name: dr.profiles?.name ?? "不明",
         });
       }
     });
@@ -138,82 +118,96 @@ export default function CostSheet({ projectId }: { projectId: number }) {
   }
 
   return (
-    <div className="max-w-6xl mx-auto p-4">
-      {loading && <div>読み込み中...</div>}
+    <div className="container mt-5">
+      <h1 className="title is-4">原価内訳表</h1>
+
+      {/* ▼ プロジェクト選択 */}
+      <div className="field mb-4">
+        <label className="label">プロジェクト選択</label>
+        <div className="control">
+          <div className="select is-fullwidth">
+            <select
+              value={selectedProjectId ?? ""}
+              onChange={(e) => setSelectedProjectId(Number(e.target.value))}
+            >
+              <option value="">-- 選択してください --</option>
+              {projects.map((p) => (
+                <option key={p.id} value={p.id}>
+                  No.{p.project_no} | {p.project_name} | {p.product_name}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+      </div>
+
+      {loading && <progress className="progress is-small is-primary" max="100">読み込み中</progress>}
 
       {project && (
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold mb-2">
+        <div className="box">
+          <h2 className="subtitle is-5">
             工事No: {project.project_no} | {project.project_name} | {project.product_name}
-          </h1>
+          </h2>
+
+          <table className="table is-bordered is-striped is-hoverable is-fullwidth" style={{ backgroundColor: "#121212", color: "#eee" }}>
+            <thead>
+              <tr>
+                <th>品名</th>
+                <th>数量</th>
+                <th>単位</th>
+                <th>単価</th>
+                <th>合計金額</th>
+                <th>作業者</th>
+                <th>作業内容</th>
+                <th>時間</th>
+                <th>特記事項</th>
+              </tr>
+            </thead>
+            <tbody>
+              {purchaseOrders.map((po) => {
+                const reports = dailyReports[po.id] || [];
+                return (
+                  <>
+                    <tr className="has-background-dark has-text-weight-bold" key={po.id}>
+                      <td>{po.item_name}</td>
+                      <td>{po.quantity}</td>
+                      <td>{po.unit}</td>
+                      <td>{po.unit_price}</td>
+                      <td>{po.total_price}</td>
+                      <td colSpan={4}></td>
+                    </tr>
+                    {reports.map((r) => (
+                      <tr key={r.id}>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td>{r.user_name}</td>
+                        <td>{r.task_description}</td>
+                        <td>{r.work_hours}</td>
+                        <td>{r.note}</td>
+                      </tr>
+                    ))}
+                    {reports.map(
+                      (r) =>
+                        r.overtime_hours && r.overtime_hours > 0 && (
+                          <tr key={`ot-${r.id}`} className="has-text-danger is-italic">
+                            <td colSpan={5}></td>
+                            <td>{r.user_name}</td>
+                            <td>残業</td>
+                            <td>{r.overtime_hours}</td>
+                            <td>残業</td>
+                          </tr>
+                        )
+                    )}
+                  </>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
       )}
-
-      <table className="min-w-full border border-gray-300">
-        <thead className="bg-gray-100">
-          <tr>
-            <th className="border p-2">品名</th>
-            <th className="border p-2">数量</th>
-            <th className="border p-2">単位</th>
-            <th className="border p-2">単価</th>
-            <th className="border p-2">合計金額</th>
-            <th className="border p-2">作業者</th>
-            <th className="border p-2">作業内容</th>
-            <th className="border p-2">時間</th>
-            <th className="border p-2">特記事項</th>
-          </tr>
-        </thead>
-        <tbody>
-          {purchaseOrders.map((po) => {
-            const reports = dailyReports[po.id] || [];
-            return (
-              <tbody key={po.id}>
-                <tr className="bg-gray-200 font-bold">
-                  <td className="border p-2">{po.item_name}</td>
-                  <td className="border p-2">{po.quantity}</td>
-                  <td className="border p-2">{po.unit}</td>
-                  <td className="border p-2">{po.unit_price}</td>
-                  <td className="border p-2">{po.total_price}</td>
-                  <td className="border p-2" colSpan={4}></td>
-                </tr>
-
-                {/* 作業者ごとの日報 */}
-                {reports.map((r) => (
-                  <tr key={r.id}>
-                    <td className="border p-2"></td>
-                    <td className="border p-2"></td>
-                    <td className="border p-2"></td>
-                    <td className="border p-2"></td>
-                    <td className="border p-2"></td>
-                    <td className="border p-2">{r.user_name}</td>
-                    <td className="border p-2">{r.task_description}</td>
-                    <td className="border p-2">{r.work_hours}</td>
-                    <td className="border p-2">{r.note}</td>
-                  </tr>
-                ))}
-
-                {/* 残業時間を別行で表示 */}
-                {reports.map(
-                  (r) =>
-                    r.overtime_hours && r.overtime_hours > 0 && (
-                      <tr key={"ot-" + r.id} className="italic text-red-600">
-                        <td className="border p-2"></td>
-                        <td className="border p-2"></td>
-                        <td className="border p-2"></td>
-                        <td className="border p-2"></td>
-                        <td className="border p-2"></td>
-                        <td className="border p-2">{r.user_name}</td>
-                        <td className="border p-2">残業</td>
-                        <td className="border p-2">{r.overtime_hours}</td>
-                        <td className="border p-2">残業</td>
-                      </tr>
-                    )
-                )}
-              </tbody>
-            );
-          })}
-        </tbody>
-      </table>
     </div>
   );
 }
