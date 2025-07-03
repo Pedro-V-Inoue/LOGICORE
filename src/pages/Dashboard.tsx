@@ -126,7 +126,7 @@ export default function Dashboard() {
       </div>
 
       <SummaryCards
-        totalHours={totalWorkHours}
+        totalHours={totalWorkHours + totalOvertimeHours}
         overtimeHours={totalOvertimeHours}
         days={reportCount}
       />
@@ -134,7 +134,7 @@ export default function Dashboard() {
       <div className="columns">
         <div className="column is-half">
           <WorkTimePieChart
-            regular={totalWorkHours - totalOvertimeHours}
+            regular={totalWorkHours}
             overtime={totalOvertimeHours}
           />
         </div>
